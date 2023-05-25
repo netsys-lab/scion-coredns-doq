@@ -61,6 +61,10 @@ func Version(req *dns.Msg) (*dns.Msg, error) {
 
 // Size returns a normalized size based on proto.
 func Size(proto string, size uint16) uint16 {
+	if proto == "squic" {
+		return dns.MaxMsgSize - 2
+	}
+
 	if proto == "tcp" {
 		return dns.MaxMsgSize
 	}

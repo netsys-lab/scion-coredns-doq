@@ -121,6 +121,8 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lufia/plan9stats v0.0.0-20220913051719-115f729f3c8c // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-colorable v0.1.11 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -182,3 +184,13 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+//replace github.com/netsec-ethz/scion-apps v0.5.0 => ../luki-scion-apps
+replace github.com/netsec-ethz/scion-apps v0.5.0 => github.com/amdfxlucas/scion-apps v0.7.0
+
+//replace github.com/netsec-ethz/scion-apps v0.5.0 => github.com/amdfxlucas/scion-apps v0.5.0
+
+//../go/pkg/mod/github.com/scionproto/scion@v0.6.1-0.20220202161514-5883c725f748/go/pkg/grpc/dialer.go:109:9: undefined: grpc.WithBalancerName
+replace google.golang.org/grpc v1.54.0 => google.golang.org/grpc v1.40.0
+
+//replace github.com/scionproto/scion v0.6.1-0.20220202161514-5883c725f748 => github.com/netsec-ethz/scion v0.6.1-0.20220202161514-5883c725f748
