@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/coredns/coredns/plugin/pkg/transport"
+	"github.com/netsec-ethz/scion-apps/pkg/pan"
 
 	"github.com/miekg/dns"
 )
@@ -68,6 +69,11 @@ func HostPortOrFile(s ...string) ([]string, error) {
 				servers = append(servers, ss...)
 				continue
 			}
+			if scaddr, ok := pan.ParseUDPAddr(stripZone(addr)); ok == nil {
+				servers = append(servers, transport.SQUIC+"://"+scaddr.String())
+				continue
+			}
+
 			return servers, fmt.Errorf("not an IP address or file: %q", host)
 		}
 		servers = append(servers, h)

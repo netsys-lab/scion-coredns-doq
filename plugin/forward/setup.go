@@ -121,7 +121,7 @@ func parseStanza(c *caddy.Controller) (*Forward, error) {
 	}
 
 	transports := make([]string, len(toHosts))
-	allowedTrans := map[string]bool{"dns": true, "tls": true}
+	allowedTrans := map[string]bool{"dns": true, "tls": true} // add "squic": true here
 	for i, host := range toHosts {
 		trans, h := parse.Transport(host)
 

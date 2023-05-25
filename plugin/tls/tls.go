@@ -9,6 +9,16 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/tls"
 )
 
+// NextProtoDQ - During connection establishment, DNS/QUIC support is indicated
+// by selecting the ALPN token "dq" in the crypto handshake.
+// Current draft version: https://datatracker.ietf.org/doc/html/draft-ietf-dprive-dnsoquic-02
+const NextProtoDQ = "doq-i02"
+
+// nextProtosDQ are ALPNs for a DNS-over-QUIC server
+var nextProtosDoQ = []string{
+	NextProtoDQ, "doq-i00", "dq", "doq",
+}
+
 func init() { plugin.Register("tls", setup) }
 
 func setup(c *caddy.Controller) error {
@@ -65,6 +75,11 @@ func parseTLS(c *caddy.Controller) error {
 		// NewTLSConfigFromArgs only sets RootCAs, so we need to let ClientCAs refer to it.
 		tls.ClientCAs = tls.RootCAs
 
+		// DNS-over-QUIC config
+		tlsDoQ := tls.Clone()
+		tlsDoQ.NextProtos = nextProtosDoQ
+
+		config.TLSConfigQUIC = tlsDoQ
 		config.TLSConfig = tls
 	}
 	return nil

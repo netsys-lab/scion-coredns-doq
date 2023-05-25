@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/coredns/coredns/plugin/pkg/edns"
+	"github.com/netsec-ethz/scion-apps/pkg/pan"
 
 	"github.com/miekg/dns"
 )
@@ -112,6 +113,18 @@ func (r *Request) LocalAddr() string { return r.W.LocalAddr().String() }
 
 // Proto gets the protocol used as the transport. This will be udp or tcp.
 func (r *Request) Proto() string {
+
+	/*if dohWriter, ok := r.W.(*dnsserver.DoHWriter); ok {
+		if dohWriter.proto != nil {
+			return dohWriter.proto
+		}
+	}*/
+
+	//if _, ok := r.W.RemoteAddr().(*pan.UDPAddr); ok {
+	if _, ok := r.W.LocalAddr().(pan.UDPAddr); ok {
+		return "squic"
+	}
+
 	if _, ok := r.W.RemoteAddr().(*net.UDPAddr); ok {
 		return "udp"
 	}

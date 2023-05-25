@@ -53,6 +53,8 @@ type Config struct {
 
 	// TLSConfig when listening for encrypted connections (gRPC, DNS-over-TLS).
 	TLSConfig *tls.Config
+	// TLSConfigQUIC is a tls.Config for DNS-over-QUIC
+	TLSConfigQUIC *tls.Config
 
 	// Timeouts for TCP, TLS and HTTPS servers.
 	ReadTimeout  time.Duration

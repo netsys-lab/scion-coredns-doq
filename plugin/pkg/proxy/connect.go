@@ -6,13 +6,16 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/coredns/coredns/request"
+	"github.com/netsec-ethz/scion-apps/pkg/pan"
 
 	"github.com/miekg/dns"
 )
@@ -85,6 +88,26 @@ func (p *Proxy) Connect(ctx context.Context, state request.Request, opts Options
 	default:
 		proto = state.Proto()
 	}
+	// if server is listening on SCION Address i.e. squic://19-ffaa:1:1067,127.0.0.1:8853  opts.transport is 'squic'.
+	// The Proxy 'p' might have another though
+
+	// only if proxy's Address can successfully be parsed to a SCION pan.UDPAddr
+	// it really is a SCION server himself
+	if _, ok := pan.ParseUDPAddr(p.Addr()); ok == nil {
+		fmt.Printf("forwarded to SCION proxy: %v \n", p.Addr())
+	} else {
+		// Server and Proxy/Forwarder dont use the same Transport
+		// so parse it from Proxy's URL
+
+		var proxy_proto *url.URL
+		var err error
+		proxy_proto, err = url.Parse(p.addr)
+		if err == nil {
+			proto = proxy_proto.Scheme
+		} else { // anything that doesnt specify a scheme i.e. 8.8.8.8 will default to dns://8.8.8.8 plain old UDP
+			proto = "udp"
+		}
+	}
 
 	pc, cached, err := p.transport.Dial(proto)
 	if err != nil {
@@ -122,6 +145,7 @@ func (p *Proxy) Connect(ctx context.Context, state request.Request, opts Options
 			// spoofs from blocking the upstream response.
 			// In the case this is a legitimate malformed response from the upstream, this will result in a timeout.
 			if proto == "udp" {
+				// fmt.Printf("is TimeoutError: %v", err.(net.Error).Timeout())
 				if _, ok := err.(net.Error); !ok {
 					continue
 				}

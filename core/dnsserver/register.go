@@ -86,6 +86,10 @@ func (h *dnsContext) InspectServerBlocks(sourceFile string, serverBlocks []caddy
 					port = transport.GRPCPort
 				case transport.HTTPS:
 					port = transport.HTTPSPort
+				case transport.QUIC:
+					port = transport.QUICPort
+				case transport.SQUIC:
+					port = transport.QUICPort
 				}
 			}
 
@@ -187,6 +191,19 @@ func (h *dnsContext) MakeServers() ([]caddy.Server, error) {
 				return nil, err
 			}
 			servers = append(servers, s)
+		case transport.QUIC:
+			s, err := NewServerQUIC(addr, group)
+			if err != nil {
+				return nil, err
+			}
+			servers = append(servers, s)
+		case transport.SQUIC:
+			s, err := NewServerSQUIC(addr, group)
+			if err != nil {
+				return nil, err
+			}
+			servers = append(servers, s)
+
 		}
 	}
 
