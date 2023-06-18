@@ -51,6 +51,7 @@ var Directives = []string{
 	"k8s_external",
 	"kubernetes",
 	"file",
+	"rhine",
 	"auto",
 	"secondary",
 	"etcd",
