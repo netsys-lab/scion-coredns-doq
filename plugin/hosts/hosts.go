@@ -8,6 +8,7 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/dnsutil"
 	"github.com/coredns/coredns/plugin/pkg/fall"
 	"github.com/coredns/coredns/request"
+	"github.com/netsec-ethz/scion-apps/pkg/pan"
 
 	"github.com/miekg/dns"
 )
@@ -50,6 +51,9 @@ func (h Hosts) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (
 	case dns.TypeAAAA:
 		ips := h.LookupStaticHostV6(qname)
 		answers = aaaa(qname, h.options.ttl, ips)
+	case dns.TypeTXT:
+		ips := h.LookupStaticSCIONHost(qname)
+		answers = txt(qname, h.options.ttl, ips)
 	}
 
 	// Only on NXDOMAIN we will fallthrough.
@@ -104,6 +108,18 @@ func aaaa(zone string, ttl uint32, ips []net.IP) []dns.RR {
 		r := new(dns.AAAA)
 		r.Hdr = dns.RR_Header{Name: zone, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: ttl}
 		r.AAAA = ip
+		answers[i] = r
+	}
+	return answers
+}
+
+// txt takes a slice of net.IPs and returns a slice of TXT RRs.
+func txt(zone string, ttl uint32, ips []pan.UDPAddr) []dns.RR {
+	answers := make([]dns.RR, len(ips))
+	for i, ip := range ips {
+		r := new(dns.TXT)
+		r.Hdr = dns.RR_Header{Name: zone, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: ttl}
+		r.Txt = []string{ip.String()} // maybe prepend "scion=" prefix back here again
 		answers[i] = r
 	}
 	return answers

@@ -1,31 +1,48 @@
 squic://.:10000 {
     tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
-    root ./zones
-    rhine root.db . {
-        scion on
-    }
-    log
-    errors
-}
-squic://com.:10001 {
-    tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
-    root ./zones
-    rhine com.db com. {
-        scion on
-    }
-    log
-    errors
-}
+    #root ./zones
+    #rhine root.db . {
+    #    scion on
+    #}
+    hosts hosts.conf . {
+       # 127.0.0.1 localhost
+       # 8.8.8.8 ns.primary.
+        scion=19-ffaa:1:1094,127.0.0.1 localhost
+        scion=19-ffaa:1:1067,127.0.0.1 ns.primary.
+        ttl 36000 
+        reload  0  #  0s to disable reload
+        fallthrough 
 
-squic://rhine-test.com.:10002 {
-    tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
-    root ./zones
-    rhine rhine-test.db rhine-test.com {
-        scion on
     }
+
+#    secondary  { # if not specified zone from serverblock is used here
+#        transfer from 19-ffaa:1:1067,[127.0.0.1]:853
+#    }
+
+    debug
+
     log
     errors
 }
+#squic://com.:10001 {
+#    tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
+#    root ./zones
+#    rhine com.db com. {
+#        scion on
+#    }
+#    log
+#    errors
+#}
+
+#squic://rhine-test.com.:10002 {
+#    tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
+#    root ./zones
+#    rhine rhine-test.db rhine-test.com {
+#        scion on
+#    }
+#    log
+#    errors
+#}
 
 #    auto rhine-test.com {
 #        directory .

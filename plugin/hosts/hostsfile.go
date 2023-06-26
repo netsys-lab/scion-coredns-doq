@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/coredns/coredns/plugin"
+	"github.com/netsec-ethz/scion-apps/pkg/pan"
 )
 
 // parseIP calls discards any v6 zone info, before calling net.ParseIP.
@@ -54,7 +55,7 @@ type Map struct {
 	// Key for the list of literal IP addresses must be a FQDN lowercased host name.
 	name4 map[string][]net.IP
 	name6 map[string][]net.IP
-
+	scion map[string][]pan.UDPAddr
 	// Key for the list of host names must be a literal IP address
 	// including IPv6 address without zone identifier.
 	// We don't support old-classful IP address notation.
@@ -65,6 +66,7 @@ func newMap() *Map {
 	return &Map{
 		name4: make(map[string][]net.IP),
 		name6: make(map[string][]net.IP),
+		scion: make(map[string][]pan.UDPAddr),
 		addr:  make(map[string][]string),
 	}
 }
@@ -157,7 +159,9 @@ func (h *Hostsfile) parse(r io.Reader) *Map {
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
+
 		line := scanner.Bytes()
+
 		if i := bytes.Index(line, []byte{'#'}); i >= 0 {
 			// Discard comments.
 			line = line[0:i]
@@ -166,16 +170,33 @@ func (h *Hostsfile) parse(r io.Reader) *Map {
 		if len(f) < 2 {
 			continue
 		}
-		addr := parseIP(string(f[0]))
-		if addr == nil {
-			continue
-		}
-
 		family := 0
-		if addr.To4() != nil {
-			family = 1
+		addr := parseIP(string(f[0]))
+		var saddr pan.UDPAddr
+		var er error
+		if addr != nil {
+			if addr.To4() != nil {
+				family = 1
+			} else {
+				family = 2
+			}
 		} else {
-			family = 2
+
+			var raw string = string(f[0])
+			if strings.HasPrefix(raw, "scion=") {
+				raw = strings.TrimPrefix(raw, "scion=")
+			}
+			if saddr, er = pan.ParseUDPAddr(raw); er == nil {
+
+				if saddr.IP.Is4() {
+					family = 3
+				} else {
+					family = 4
+				}
+
+			} else { // address is garbage
+				continue
+			}
 		}
 
 		for i := 1; i < len(f); i++ {
@@ -189,13 +210,21 @@ func (h *Hostsfile) parse(r io.Reader) *Map {
 				hmap.name4[name] = append(hmap.name4[name], addr)
 			case 2:
 				hmap.name6[name] = append(hmap.name6[name], addr)
+			case 3, 4:
+				hmap.scion[name] = append(hmap.scion[name], saddr)
 			default:
 				continue
 			}
 			if !h.options.autoReverse {
 				continue
 			}
-			hmap.addr[addr.String()] = append(hmap.addr[addr.String()], name)
+			switch family {
+			case 1, 2:
+				hmap.addr[addr.String()] = append(hmap.addr[addr.String()], name)
+			case 3, 4:
+				hmap.addr[saddr.String()] = append(hmap.addr[saddr.String()], name)
+			}
+
 		}
 	}
 
@@ -220,6 +249,23 @@ func (h *Hostsfile) lookupStaticHost(m map[string][]net.IP, host string) []net.I
 	return ipsCp
 }
 
+func (h *Hostsfile) lookupStaticSCIONHost(m map[string][]pan.UDPAddr, host string) []pan.UDPAddr {
+	h.RLock()
+	defer h.RUnlock()
+
+	if len(m) == 0 {
+		return nil
+	}
+
+	ips, ok := m[host]
+	if !ok {
+		return nil
+	}
+	ipsCp := make([]pan.UDPAddr, len(ips))
+	copy(ipsCp, ips)
+	return ipsCp
+}
+
 // LookupStaticHostV4 looks up the IPv4 addresses for the given host from the hosts file.
 func (h *Hostsfile) LookupStaticHostV4(host string) []net.IP {
 	host = strings.ToLower(host)
@@ -236,11 +282,25 @@ func (h *Hostsfile) LookupStaticHostV6(host string) []net.IP {
 	return append(ip1, ip2...)
 }
 
+func (h *Hostsfile) LookupStaticSCIONHost(host string) []pan.UDPAddr {
+	host = strings.ToLower(host)
+	ip1 := h.lookupStaticSCIONHost(h.hmap.scion, host)
+	ip2 := h.lookupStaticSCIONHost(h.inline.scion, host)
+	return append(ip1, ip2...)
+}
+
 // LookupStaticAddr looks up the hosts for the given address from the hosts file.
 func (h *Hostsfile) LookupStaticAddr(addr string) []string {
-	addr = parseIP(addr).String()
-	if addr == "" {
-		return nil
+
+	ip := parseIP(addr)
+	if ip != nil {
+		addr = ip.String()
+	} else {
+		if a, err := pan.ParseUDPAddr(addr); err == nil {
+			addr = a.String()
+		} else {
+			return nil
+		}
 	}
 
 	h.RLock()

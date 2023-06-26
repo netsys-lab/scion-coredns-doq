@@ -160,3 +160,11 @@ replace github.com/netsec-ethz/scion-apps v0.5.0 => github.com/amdfxlucas/scion-
 replace google.golang.org/grpc v1.54.0 => google.golang.org/grpc v1.40.0
 
 //replace github.com/scionproto/scion v0.6.1-0.20220202161514-5883c725f748 => github.com/netsec-ethz/scion v0.6.1-0.20220202161514-5883c725f748
+
+replace github.com/miekg/dns v1.1.54 => github.com/loujie1/dns v1.1.51
+
+replace github.com/loujie1/dns v1.1.51 => ../loujie1-dns
+
+
+//replace github.com/netsys-lab/sqnet v0.1.0 => ../sqnet
+
