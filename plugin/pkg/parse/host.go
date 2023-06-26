@@ -100,10 +100,10 @@ func tryFile(s string) ([]string, error) {
 	return servers, nil
 }
 
-// HostPort will check if the host part is a valid IP address, if the
+// HostPort will check if the host part is a valid IP or scion address, if the
 // IP address is valid, but no port is found, defaultPort is added.
 func HostPort(s, defaultPort string) (string, error) {
-	addr, port, err := net.SplitHostPort(s)
+	addr, port, err := pan.SplitHostPort(s)
 	if port == "" {
 		port = defaultPort
 	}
@@ -114,8 +114,14 @@ func HostPort(s, defaultPort string) (string, error) {
 		return net.JoinHostPort(s, port), nil
 	}
 
-	if net.ParseIP(addr) == nil {
-		return "", fmt.Errorf("must specify an IP address: `%s'", addr)
+	if net.ParseIP(addr) != nil {
+		return net.JoinHostPort(addr, port), nil
+		//return "", fmt.Errorf("must specify an IP address: `%s'", addr)
+	} else if _, e := pan.ParseUDPAddr(addr); e == nil {
+		//return "", fmt.Errorf("must specify an IP address: `%s'", addr)
+		return net.JoinHostPort(addr, port), nil
+	} else {
+		return "", fmt.Errorf("must specify an IP or SCION address: `%s'", addr)
 	}
-	return net.JoinHostPort(addr, port), nil
+
 }
