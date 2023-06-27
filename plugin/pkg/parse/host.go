@@ -119,7 +119,7 @@ func HostPort(s, defaultPort string) (string, error) {
 		//return "", fmt.Errorf("must specify an IP address: `%s'", addr)
 	} else if _, e := pan.ParseUDPAddr(addr); e == nil {
 		//return "", fmt.Errorf("must specify an IP address: `%s'", addr)
-		return net.JoinHostPort(addr, port), nil
+		return addr + ":" + port, nil
 	} else {
 		return "", fmt.Errorf("must specify an IP or SCION address: `%s'", addr)
 	}
