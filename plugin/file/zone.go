@@ -1,13 +1,19 @@
 package file
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin/file/tree"
+	"github.com/coredns/coredns/plugin/hosts"
+	"github.com/coredns/coredns/plugin/pkg/dnsutil"
+	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 	"github.com/coredns/coredns/plugin/pkg/upstream"
 
 	"github.com/miekg/dns"
@@ -15,6 +21,11 @@ import (
 
 // Zone is a structure that contains all data related to a DNS zone.
 type Zone struct {
+	Config *dnsserver.Config // contains TLS and QUIC conf
+
+	//	Context context.Context // for Zone to be able to use its Upstream's lookup Fcn
+	//	Request
+
 	origin  string
 	origLen int
 	file    string
@@ -31,6 +42,42 @@ type Zone struct {
 	reloadShutdown chan bool
 
 	Upstream *upstream.Upstream // Upstream for looking up external names during the resolution process.
+}
+
+// \param address  an ipv4/6 or scion address
+// \details this method computes the reverse name corresponsing to address and looks for a matching PTR record in the hosts file
+// returns  the domain-name with that address
+func (z *Zone) LookupInHosts(address string) (string, error) {
+
+	if host := z.Config.Handler("hosts"); host != nil {
+		var ho hosts.Hosts
+		var ok bool
+		if ho, ok = host.(hosts.Hosts); !ok {
+			return "", nil
+		}
+		ho.Next = nil
+		invaddr, err := dnsutil.AddressToReverse(address)
+		if err != nil {
+			return "", err
+		}
+		query := new(dns.Msg)
+		query.SetQuestion(invaddr, dns.TypePTR)
+		nw := nonwriter.New(nil)
+		if n, err := host.ServeDNS(context.Background(), nw, query); n == dns.RcodeSuccess {
+			if len(nw.Msg.Answer) > 0 { // maybe redundant, because implied by dns.RCodeSuccess
+				var ans dns.RR = nw.Msg.Answer[0] // how to handle more than one Answer here ?!
+				a := ans.(*dns.PTR)
+				if a != nil {
+					return a.Ptr, nil
+				} else {
+					return "", nil
+				}
+			}
+		} else {
+			return "", err
+		}
+	}
+	return "", errors.New("no host with this address found in hostsfile")
 }
 
 // Apex contains the apex records of a zone: SOA, NS and their potential signatures.

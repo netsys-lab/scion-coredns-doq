@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/coredns/coredns/plugin/pkg/dnsutil"
 	"github.com/miekg/dns"
 )
 
@@ -24,6 +25,20 @@ func (z *Zone) TransferIn() error {
 Transfer:
 	for _, tr = range z.TransferFrom {
 		t := new(dns.Transfer)
+		tlsCfg := z.Config.TLSConfigQUIC.Clone()
+
+		//tlsCfg.ServerName = "localhost"
+		// Check if we find our primary Server in hosts file
+		if result, err := z.LookupInHosts(tr); err == nil {
+			tlsCfg.ServerName = result
+		}
+		// otherwise the Client does the lookup in DialContext()
+		client := dns.Client{Net: "squic", TLSConfig: tlsCfg}
+		var e error
+		t.Conn, e = client.Dial(tr)
+		if e != nil {
+			return e
+		}
 		c, err := t.In(m, tr)
 		if err != nil {
 			log.Errorf("Failed to setup transfer `%s' with `%q': %v", z.origin, tr, err)
@@ -63,8 +78,8 @@ Transfer:
 // shouldTransfer checks the primaries of zone, retrieves the SOA record, checks the current serial
 // and the remote serial and will return true if the remote one is higher than the locally configured one.
 func (z *Zone) shouldTransfer() (bool, error) {
-	c := new(dns.Client)
-	c.Net = "tcp" // do this query over TCP to minimize spoofing
+	var c *dns.Client
+
 	m := new(dns.Msg)
 	m.SetQuestion(z.origin, dns.TypeSOA)
 
@@ -74,6 +89,22 @@ func (z *Zone) shouldTransfer() (bool, error) {
 Transfer:
 	for _, tr := range z.TransferFrom {
 		Err = nil
+
+		if dnsutil.IsSCIONAddress(tr) {
+			tlsCfg := z.Config.TLSConfigQUIC.Clone()
+
+			// Check if we find our primary Server in hosts file
+			if result, err := z.LookupInHosts(tr); err == nil {
+				tlsCfg.ServerName = result
+			}
+
+			// otherwise the Client does the lookup in DialContext()
+			c = &dns.Client{Net: "squic", TLSConfig: tlsCfg}
+		} else {
+			c = new(dns.Client)
+			c.Net = "tcp" // do this query over TCP to minimize spoofing
+		}
+
 		ret, _, err := c.Exchange(m, tr)
 		if err != nil || ret.Rcode != dns.RcodeSuccess {
 			Err = err

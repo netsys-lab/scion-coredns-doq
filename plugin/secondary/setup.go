@@ -17,15 +17,26 @@ var log = clog.NewWithPlugin("secondary")
 func init() { plugin.Register("secondary", setup) }
 
 func setup(c *caddy.Controller) error {
+
 	zones, err := secondaryParse(c)
 	if err != nil {
 		return plugin.Error("secondary", err)
 	}
+	/* zone keeps a pointer to config around, so it can look up domainNames for TransferFrom that go into the TLSConfig
+	in the hosts plugin's hostfile later in zone.TransferIn()
+	*/
+	config := dnsserver.GetConfig(c)
 
 	// Add startup functions to retrieve the zone and keep it up to date.
 	for i := range zones.Names {
 		n := zones.Names[i]
 		z := zones.Z[n]
+		if config != nil {
+
+			// grab tlc config and all we need  and store it in the zone
+			z.Config = config
+		}
+
 		if len(z.TransferFrom) > 0 {
 			c.OnStartup(func() error {
 				z.StartupOnce.Do(func() {

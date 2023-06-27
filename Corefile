@@ -4,20 +4,22 @@ squic://.:10000 {
     #rhine root.db . {
     #    scion on
     #}
+    # hosts block must come before secondary
     hosts hosts.conf . {
        # 127.0.0.1 localhost
        # 8.8.8.8 ns.primary.
         scion=19-ffaa:1:1094,127.0.0.1 localhost
         scion=19-ffaa:1:1067,127.0.0.1 ns.primary.
+        19-ffaa:1:1067,127.0.0.2 ns2.primary.   # both versions, with or without 'scion=' prefix work
         ttl 36000 
         reload  0  #  0s to disable reload
         fallthrough 
 
     }
 
-#    secondary  { # if not specified zone from serverblock is used here
-#        transfer from 19-ffaa:1:1067,[127.0.0.1]:853
-#    }
+    secondary  { # if not specified zone from serverblock is used here
+        transfer from 19-ffaa:1:1067,[127.0.0.1]:853
+    }
 
     debug
 
