@@ -9,11 +9,32 @@ import (
 	"github.com/netsec-ethz/scion-apps/pkg/pan"
 )
 
+func IsSCIONAddress(address string) bool {
+	_, err := pan.ParseUDPAddr(address)
+	return err == nil
+}
+
+func AddressToReverse(address string) (string, error) {
+	if IsSCIONAddress(address) {
+		return ReverseSCIONAddr(address)
+
+	}
+	if ip4 := ParseIPv4(address); ip4 != nil {
+		return InvertIPv4(address)
+
+	}
+	if ip6 := ParseIPv6(address); ip6 != nil {
+		return InvertIPv6(address)
+	}
+	return "", errors.New("invalid address passed. Neither ipv4/6 nor scion")
+}
+
 // ExtractAddressFromReverse turns a standard PTR reverse record name
-// into an IP address. This works for ipv4 or ipv6.
+// into an IP address or SCION address. This works for ipv4 or ipv6.
 //
-// 54.119.58.176.in-addr.arpa. becomes 176.58.119.54. If the conversion
-// fails the empty string is returned.
+// 54.119.58.176.in-addr.arpa. becomes 176.58.119.54.
+// 1.0.0.127.in-addr.19-ffaa-1-1067.scion.arpa. => 19-ffaa:1:1067,[127.0.0.1]
+// If the conversion fails the empty string is returned.
 func ExtractAddressFromReverse(reverseName string) string {
 	search := ""
 
@@ -39,7 +60,7 @@ func ExtractAddressFromReverse(reverseName string) string {
 
 // IsReverse returns 0 is name is not in a reverse zone. Anything > 0 indicates
 // name is in a reverse zone. The returned integer will be 1 for in-addr.arpa. (IPv4)
-// and 2 for ip6.arpa. (IPv6).
+// and 2 for ip6.arpa. (IPv6) 3 for .scion.arpa.
 func IsReverse(name string) int {
 	if strings.HasSuffix(name, IP4arpa) {
 		return 1
@@ -250,7 +271,7 @@ func ReverseSCIONAddr(scaddr string) (string, error) {
 		if err != nil {
 			return scaddr, err
 		}
-		invName = revIP + ".in-addr." + invIA + ".scion.arpa"
+		invName = revIP + InAddr4 + invIA + SCIONarpa
 		return invName, nil
 	} else if addr.IP.Is6() {
 		tmpIP, err := InvertIPv6(addr.IP.StringExpanded())
@@ -258,7 +279,7 @@ func ReverseSCIONAddr(scaddr string) (string, error) {
 			return scaddr, err
 		}
 		revIP = strings.Replace(tmpIP, ":", ".", -1)
-		invName = revIP + ".ipv6." + invIA + ".scion.arpa"
+		invName = revIP + InAddr4 + invIA + SCIONarpa
 		return invName, nil
 	}
 	return scaddr, errors.New("your AS's host addressing scheme is neither IPv4 nor 6 and not supported for rDNS lookup yet")
