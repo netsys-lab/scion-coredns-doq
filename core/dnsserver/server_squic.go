@@ -172,7 +172,7 @@ func (s *ServerSQUIC) handleQUICSession(session quic.Connection) {
 func (s *ServerSQUIC) handleQUICStream(stream quic.Stream, session quic.Connection) {
 	// var b []byte
 	var b []byte = s.bytesPool.Get().([]byte)
-	defer s.bytesPool.Put(&b)
+	defer s.bytesPool.Put(b)
 
 	// The client MUST send the DNS query over the selected stream, and MUST
 	// indicate through the STREAM FIN mechanism that no further data will

@@ -1,0 +1,28 @@
+$TTL    604800
+; $ORIGIN scion.arpa.
+@    IN    SOA    ns.scion.test. lucas\.scharbrodt.ovgu.de (
+                  3        ; Serial
+             604800        ; Refresh
+              86400        ; Retry
+            2419200        ; Expire
+             604800 )    ; Negative Cache TTL
+;
+; name servers - NS records
+@    IN    NS    ns
+
+19-ffaa-1-1067 IN NS 19-ffaa-1-1067,[127.0.0.1]
+19-ffaa-1-1094 IN NS 19-ffaa-1-1067,[127.0.0.1]
+
+1.0.0.127.in-addr.19-ffaa-1-1067 IN PTR primary.ns.scion.test.
+
+1.0.0.127.in-addr.19-ffaa-1-1067 IN PTR secondary.ns.scion.test.
+
+15.2.0.10.in-addr.19-ffaa-1-1067 IN PTR ns2.scion.test.
+
+1.0.0.127.in-addr.19-ffaa-1-1094 IN PTR scnd2.scion.test.
+
+
+;"17-ffaa:1:1008,127.0.0.1 ethz.something
+
+
+1.0.0.127.in-addr.19-ffaa-1-fe4 IN PTR rhine.ovgu.scionlab.
