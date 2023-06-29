@@ -17,7 +17,15 @@ type DoHWriter struct {
 	laddr net.Addr
 
 	// request is the HTTP request we're currently handling.
-	request *http.Request
+	request        *http.Request
+	tsigTimersOnly bool
+	tsigStatus     error
+}
+
+func (d *DoHWriter) TsigTimersOnly(b bool) { d.tsigTimersOnly = b }
+
+func (d *DoHWriter) TsigStatus() error {
+	return d.tsigStatus
 }
 
 // RemoteAddr returns the remote address.

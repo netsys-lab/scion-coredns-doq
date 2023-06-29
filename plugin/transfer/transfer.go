@@ -59,7 +59,7 @@ func (t *Transfer) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 		return plugin.NextOrFailure(t.Name(), t.Next, ctx, w, r)
 	}
 
-	if state.Proto() != "tcp" {
+	if proto := state.Proto(); proto != "tcp" && proto != "squic" {
 		return dns.RcodeRefused, nil
 	}
 
