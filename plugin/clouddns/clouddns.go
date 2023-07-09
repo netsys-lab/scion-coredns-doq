@@ -123,7 +123,7 @@ func (h *CloudDNS) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 
 	for _, hostedZone := range z {
 		h.zMu.RLock()
-		m.Answer, m.Ns, m.Extra, result = hostedZone.z.Lookup(ctx, state, qname)
+		m.Answer, m.Ns, m.Extra, result = hostedZone.z.Lookup(ctx, state, qname, state.QType())
 		h.zMu.RUnlock()
 
 		// Take the answer if it's non-empty OR if there is another

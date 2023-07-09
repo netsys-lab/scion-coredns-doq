@@ -320,7 +320,7 @@ func (h *Azure) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	var result file.Result
 	for _, z := range zones {
 		h.zMu.RLock()
-		m.Answer, m.Ns, m.Extra, result = z.z.Lookup(ctx, state, qname)
+		m.Answer, m.Ns, m.Extra, result = z.z.Lookup(ctx, state, qname, state.QType())
 		h.zMu.RUnlock()
 
 		// record type exists for this name (NODATA).

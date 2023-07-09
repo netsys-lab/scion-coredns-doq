@@ -209,7 +209,7 @@ func TestLookUpNoDataResult(t *testing.T) {
 	for _, tc := range noDataTestCases {
 		m := tc.Msg()
 		state := request.Request{W: &test.ResponseWriter{}, Req: m}
-		_, _, _, result := fm.Z[testzone].Lookup(ctx, state, tc.Qname)
+		_, _, _, result := fm.Z[testzone].Lookup(ctx, state, tc.Qname, state.QType())
 		if result != NoData {
 			t.Errorf("Expected result == 3 but result == %v ", result)
 		}

@@ -84,7 +84,7 @@ func (f File) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (i
 		return dns.RcodeServerFailure, nil
 	}
 
-	answer, ns, extra, result := z.Lookup(ctx, state, qname)
+	answer, ns, extra, result := z.Lookup(ctx, state, qname, r.Question[0].Qtype)
 
 	m := new(dns.Msg)
 	m.SetReply(r)
