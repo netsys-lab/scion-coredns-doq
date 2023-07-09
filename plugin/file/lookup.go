@@ -2,6 +2,7 @@ package file
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin/file/rrutil"
@@ -30,8 +31,8 @@ const (
 
 // Lookup looks up qname and qtype in the zone. When do is true DNSSEC records are included.
 // Three sets of records are returned, one for the answer, one for authority  and one for the additional section.
-func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string) ([]dns.RR, []dns.RR, []dns.RR, Result) {
-	qtype := state.QType()
+func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string, qtype uint16) ([]dns.RR, []dns.RR, []dns.RR, Result) {
+	//qtype := state.QType()
 	do := state.Do()
 
 	// If z is a secondary zone we might not have transferred it, meaning we have
@@ -51,7 +52,14 @@ func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string) 
 			return ap.soa(do), ap.ns(do), nil, Success
 		case dns.TypeNS:
 			nsrrs := ap.ns(do)
+			// How do we now here if the request was received over squic?! is it even important ?!
+			// or should we just send anyone who's asking scion txt glue records ?!
 			glue := tr.Glue(nsrrs, do, false) // technically this isn't glue
+			sglue := tr.Glue(nsrrs, do, true)
+			if len(sglue) > len(glue) {
+				return nsrrs, nil, sglue, Success
+			}
+
 			return nsrrs, nil, glue, Success
 		}
 	}
@@ -160,6 +168,12 @@ func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string) 
 			}
 
 			glue := tr.Glue(nsrrs, do, false)
+			sglue := tr.Glue(nsrrs, do, true)
+			if len(sglue) > len(glue) {
+				glue = sglue
+				fmt.Print("almost left scion glue ^^\n")
+			}
+
 			if do {
 				dss := typeFromElem(elem, dns.TypeDS, do)
 				nsrrs = append(nsrrs, dss...)
