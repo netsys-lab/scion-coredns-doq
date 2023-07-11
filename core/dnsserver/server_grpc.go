@@ -166,6 +166,10 @@ type gRPCresponse struct {
 	Msg        *dns.Msg
 }
 
+func (r gRPCresponse) SupportsMultiMsg() bool {
+	return false
+}
+
 // Write is the hack that makes this work. It does not actually write the message
 // but returns the bytes we need to write in r. We can then pick this up in Query
 // and write a proper protobuf back to the client.

@@ -230,6 +230,36 @@ func (r *Request) SizeAndDo(m *dns.Msg) bool {
 // check if the reply fits without compression and then *with* compression.
 // Note, the TC bit will be set regardless of protocol, even TCP message will
 // get the bit, the client should then retry with pigeons.
+func (r *Request) ScrubNoDiscard(reply *dns.Msg) []*dns.Msg {
+	replies := reply.TruncateNoDiscard(r.Size())
+
+	if reply.Compress {
+		return replies
+	}
+
+	if r.Proto() == "udp" {
+		rl := reply.Len()
+		// Last ditch attempt to avoid fragmentation, if the size is bigger than the v4/v6 UDP fragmentation
+		// limit and sent via UDP compress it (in the hope we go under that limit). Limits taken from NSD:
+		//
+		//    .., 1480 (EDNS/IPv4), 1220 (EDNS/IPv6), or the advertised EDNS buffer size if that is
+		//    smaller than the EDNS default.
+		// See: https://open.nlnetlabs.nl/pipermail/nsd-users/2011-November/001278.html
+		if rl > 1480 && r.Family() == 1 {
+			reply.Compress = true
+		}
+		if rl > 1220 && r.Family() == 2 {
+			reply.Compress = true
+		}
+	}
+
+	return replies
+}
+
+// Scrub scrubs the reply message so that it will fit the client's buffer. It will first
+// check if the reply fits without compression and then *with* compression.
+// Note, the TC bit will be set regardless of protocol, even TCP message will
+// get the bit, the client should then retry with pigeons.
 func (r *Request) Scrub(reply *dns.Msg) *dns.Msg {
 	reply.Truncate(r.Size())
 

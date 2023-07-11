@@ -190,7 +190,7 @@ func (s *ServerSQUIC) handleQUICStream(stream quic.Stream, session quic.Connecti
 	if int(msg_len) != n-2 {
 		panic(fmt.Sprintf("message size mismatch: %d vs %d", msg_len, n))
 	}
-	err := msg.Unpack(b[2:])
+	err := msg.Unpack(b[2:n])
 	if err != nil {
 		fmt.Println(b[:n])
 		// Invalid content
@@ -227,53 +227,49 @@ func (s *ServerSQUIC) handleQUICStream(stream quic.Stream, session quic.Connecti
 		_ = stream.Close()
 		return
 	}
-	var response *dns.Msg = dw.Msg
-
-	// Write the response
-	buf, _ := response.Pack()
-	/*
-		testMsg := new(dns.Msg)
-		unpackErr := testMsg.Unpack(buf)
-		if unpackErr != nil {
-			fmt.Printf("cant unpack our own response ->just about to reply shit to client\n")
+	ln := len(dw.Msgs)
+	if ln > 1 {
+		// check that QType is really AXFR and handle multiple responses here
+		if msg.Question[0].Qtype == dns.TypeAXFR {
+			fmt.Printf("server got AXFR request and is about to answer with %v response messages on the same stream\n", ln)
 		} else {
-			fmt.Printf("deep equal: %v\n", reflect.DeepEqual(response.Answer, testMsg.Answer))
-			fmt.Printf("nr of RRs in answer still equal: %v\n", len(response.Answer) == len(testMsg.Answer))
-			var strEqual bool = true
-			fmt.Print(response.Answer[0].String())
-			for i := 0; i < len(response.Answer); i++ {
-				strEqual = strEqual && response.Answer[i].String() == testMsg.Answer[i].String()
-				strEqual = strEqual && strings.HasPrefix(response.Answer[i].String(), "dummy.luki.test.home.	604800	IN	A")
+			fmt.Printf("server replies with %v messages to query: %v \n", ln, dw.Msg.Question[0].String())
+		}
+	}
+
+	//var response *dns.Msg = dw.Msg
+	for i, response := range dw.Msgs {
+
+		// Write the response
+		buf, _ := response.Pack()
+
+		n, e := stream.Write(addPrefix(buf))
+		fmt.Printf("wrote %d bytes to stream [response %v/%v]\n", len(buf)+2, i, ln)
+
+		if e != nil {
+			fmt.Println(e.Error())
+
+			if err, ok := e.(net.Error); ok {
+				fmt.Printf("remote peer cancelled stream: %v\n", err.Error())
 			}
-			fmt.Printf("elementwise str-equal: %v\n", strEqual)
-		}
-	*/
+			if err, ok := e.(*quic.StreamError); ok {
+				fmt.Printf("remote peer cancelled stream: %v\n", err.Error())
+			}
+			if err, ok := e.(*quic.TransportError); ok {
+				fmt.Printf("TransportError: %v\n", err.Error())
+			}
+			if err, ok := e.(*quic.ApplicationError); ok {
+				fmt.Printf("ApplicationError: %v\n", err.Error())
+			}
 
-	// fmt.Println("encoded response(without fst 2 bytes): ", buf)
-	n, e := stream.Write(addPrefix(buf))
-	fmt.Printf("wrote %d bytes to stream\n", len(buf)+2)
+			if n != len(buf) {
+				fmt.Printf("stream write failure! buffer had size %d but only %d was sent", len(buf), n)
+				// probably IdleTimeoutError here
+				//panic("EXIT FAILURE")
 
-	if e != nil {
-		fmt.Println(e.Error())
-
-		if err, ok := e.(net.Error); ok {
-			fmt.Printf("remote peer cancelled stream: %v\n", err.Error())
-		}
-		if err, ok := e.(*quic.StreamError); ok {
-			fmt.Printf("remote peer cancelled stream: %v\n", err.Error())
-		}
-		if err, ok := e.(*quic.TransportError); ok {
-			fmt.Printf("TransportError: %v\n", err.Error())
-		}
-		if err, ok := e.(*quic.ApplicationError); ok {
-			fmt.Printf("ApplicationError: %v\n", err.Error())
+			}
 		}
 
-		if n != len(buf) {
-			fmt.Printf("stream write failure! buffer had size %d but only %d was sent", len(buf), n)
-			panic("EXIT FAILURE")
-
-		}
 	}
 }
 
