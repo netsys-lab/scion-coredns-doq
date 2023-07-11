@@ -284,7 +284,14 @@ func (s *Server) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 	}
 
 	// Wrap the response writer in a ScrubWriter so we automatically make the reply fit in the client's buffer.
-	w = request.NewScrubWriter(r, w)
+	state := request.Request{W: w, Req: r}
+
+	// there are no "truncated" responses in QUIC anymore
+	if state.Proto() != "squic" {
+		w = request.NewScrubWriter(r, w)
+	} else {
+		w = request.NewNoDiscardScrubWriter(r, w)
+	}
 
 	q := strings.ToLower(r.Question[0].Name)
 	var (
