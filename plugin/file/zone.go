@@ -80,6 +80,63 @@ func (z *Zone) LookupInHosts(address string) (string, error) {
 	return "", errors.New("no host with this address found in hostsfile")
 }
 
+// searches address of type 'qtype' dns.TypeA|AAAA|TXT for 'domainname' in hostsfile
+func (z *Zone) LookupAddrInHosts(domainname string, qtype uint16) (string, error) {
+	if host := z.Config.Handler("hosts"); host != nil {
+		var ho hosts.Hosts
+		var ok bool
+		if ho, ok = host.(hosts.Hosts); !ok {
+			return "", nil
+		}
+		ho.Next = nil
+
+		query := new(dns.Msg)
+		query.SetQuestion(dns.Fqdn(domainname), qtype)
+		nw := nonwriter.New(nil)
+		if n, err := host.ServeDNS(context.Background(), nw, query); n == dns.RcodeSuccess {
+			if len(nw.Msg.Answer) > 0 { // maybe redundant, because implied by dns.RCodeSuccess
+				var ans dns.RR = nw.Msg.Answer[0] // how to handle more than one Answer here ?!
+
+				switch qtype {
+				case dns.TypeA:
+					{
+						a := ans.(*dns.A)
+						if a != nil {
+							return string(a.A), nil
+						} else {
+							return "", nil
+						}
+					}
+				case dns.TypeAAAA:
+					{
+						a := ans.(*dns.AAAA)
+						if a != nil {
+							return string(a.AAAA), nil
+						} else {
+							return "", nil
+						}
+					}
+				case dns.TypeTXT:
+					{
+						a := ans.(*dns.TXT)
+						if a != nil {
+							return strings.Join(a.Txt, ""), nil
+						} else {
+							return "", nil
+						}
+					}
+
+				}
+			} else {
+				return "", err
+			}
+		}
+		return "", errors.New("no address for this host found in hostsfile")
+
+	}
+	return "", errors.New("no address for this host found in hostsfile")
+}
+
 // Apex contains the apex records of a zone: SOA, NS and their potential signatures.
 type Apex struct {
 	SOA    *dns.SOA

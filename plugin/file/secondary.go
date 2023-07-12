@@ -42,8 +42,46 @@ Transfer:
 		var tlsCfg *tls.Config
 
 		if _, ok := dns.IsDomainName(tr); ok {
-			// we only have the domain-name of out primary NS
+			// we only have the domain-name of our primary NS
 			// so we need to resolve it first
+			var addressForHost string
+
+			// check first if we find a SCION address for it
+			addr, eee := z.LookupAddrInHosts(dns.Fqdn(tr), dns.TypeTXT)
+			if eee == nil && addr != "" {
+				// found scion address for host in hostsfile
+				addressForHost = addr
+
+			} else {
+				// didnt find it in hostsfile, so resolve it
+				scaddrs, err := resolvapi.LookupSCIONAddress(dns.Fqdn(tr))
+				if err != nil {
+					return err
+				}
+				if len(scaddrs) > 0 {
+					addressForHost = scaddrs[0]
+				}
+			}
+
+			if addressForHost != "" {
+				netw = "squic"
+				tlsCfg = z.Config.TLSConfigQUIC.Clone()
+				tlsCfg.ServerName = dns.Fqdn(tr)
+				// use the default SCION DoQ Port if none was given
+				tr = util.WithPortIfNotSet(addressForHost, 8853)
+
+				goto dialPrimary
+			} else {
+				// fallback to IPv4/6 addresses
+				addr, eee := z.LookupAddrInHosts(dns.Fqdn(tr), dns.TypeA)
+				if eee == nil && addr != "" {
+					// found scion address for host in hostsfile
+					addressForHost = addr
+					tr = addressForHost
+				}
+				goto dialPrimary
+				// the dns.Client relies on the net.Dialer, which knows how to resolve domain-names to IP addresses
+			}
 		}
 
 		if u, e := url.Parse(tr); e == nil {
@@ -53,25 +91,35 @@ Transfer:
 			if e != nil {
 				return e
 			}
+			var addressForHost string
 
-			// if 'host' has only IPv4/6 addresses, they are resolved by net.Dialer )DialContext
-			// in Client.Dial automatically
-			// only for SCION addresses the host might potentially have we need to do this ourselves
-			scaddrs, err := resolvapi.LookupSCIONAddress(host)
-			if err != nil {
-				// resolution failed, probably because scion capable sdns resolver is not running locally
-				if netw == "squic" {
-					// we wanted to dial primary with SCION, but didnt get its SCION address, how sad
-					return err
+			addr, eee := z.LookupAddrInHosts(host, dns.TypeTXT)
+			if eee == nil && addr != "" {
+				// found address for host in hostsfile
+				addressForHost = addr
+			} else {
+
+				// if 'host' has only IPv4/6 addresses, they are resolved by net.Dialer )DialContext
+				// in Client.Dial automatically
+				// only for SCION addresses the host might potentially have we need to do this ourselves
+				scaddrs, err := resolvapi.LookupSCIONAddress(host)
+				if err != nil {
+					// resolution failed, probably because scion capable sdns resolver is not running locally
+					if netw == "squic" {
+						// we wanted to dial primary with SCION, but didnt get its SCION address, how sad
+						return err
+					}
+					goto dialPrimary // fallback to old legacy way of things
 				}
-				goto dialPrimary // fallback to old legacy way of things
-			}
-			if len(scaddrs) == 0 {
-				if netw == "squic" {
-					return errors.New("schema is squic:// but no SCION Address could be resolved for host")
+				if len(scaddrs) == 0 {
+					if netw == "squic" {
+						return errors.New("schema is squic:// but no SCION Address could be resolved for host")
+					}
+					goto dialPrimary
 				}
-				goto dialPrimary
+				addressForHost = scaddrs[0]
 			}
+
 			tlsCfg = z.Config.TLSConfigQUIC.Clone()
 			tlsCfg.ServerName = host
 
@@ -81,14 +129,14 @@ Transfer:
 					return eee
 				}
 
-				tr = util.WithPortIfNotSet(scaddrs[0], port)
+				tr = util.WithPortIfNotSet(addressForHost, port)
 
 			} else {
 				// use the default SCION DoQ Port if none was given
-				tr = util.WithPortIfNotSet(scaddrs[0], 8853)
+				tr = util.WithPortIfNotSet(addressForHost, 8853)
 
 			}
-
+			goto dialPrimary
 		}
 
 		if _, er := pan.ParseUDPAddr(tr); er == nil {
