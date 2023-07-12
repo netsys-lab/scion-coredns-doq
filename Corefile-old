@@ -6,11 +6,10 @@ squic://.:10000 {
     #}
 
   
-   #file zones/scion.test.db  scion.test. # has only scion-TXT records
-   #file zones/scion.arpa.db scion.arpa. # for reverse lookup of SCION addresses
-   file zones/dummy.luki.test.home20000.db luki.test.home.
+   file zones/scion.test.db  scion.test. # has only scion-TXT records
+   file zones/scion.arpa.db scion.arpa. # for reverse lookup of SCION addresses
 
-    transfer luki.test.home. {
+    transfer scion.test. {
         to *
     }
 
@@ -44,3 +43,27 @@ squic://.:10000 {
     log
     errors
 }
+#squic://com.:10001 {
+#    tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
+#    root ./zones
+#    rhine com.db com. {
+#        scion on
+#    }
+#    log
+#    errors
+#}
+
+#squic://rhine-test.com.:10002 {
+#    tls ca/localhost/localhost-cert.pem ca/localhost/localhost-key.pem
+#    root ./zones
+#    rhine rhine-test.db rhine-test.com {
+#        scion on
+#    }
+#    log
+#    errors
+#}
+
+#    auto rhine-test.com {
+#        directory .
+#    }
+#    reload 20s
