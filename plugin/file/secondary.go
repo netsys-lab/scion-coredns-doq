@@ -1,11 +1,21 @@
 package file
 
 import (
+	"crypto/tls"
+	"errors"
 	"math/rand"
+	"net"
+	"net/url"
+	"strconv"
 	"time"
+
+	util "github.com/miekg/dns/dnsutil"
 
 	"github.com/coredns/coredns/plugin/pkg/dnsutil"
 	"github.com/miekg/dns"
+	"github.com/miekg/dns/resolvapi"
+	"github.com/netsec-ethz/scion-apps/pkg/pan"
+	"inet.af/netaddr"
 )
 
 // TransferIn retrieves the zone from the masters, parses it and sets it live.
@@ -24,16 +34,89 @@ func (z *Zone) TransferIn() error {
 
 Transfer:
 	for _, tr = range z.TransferFrom {
-		t := new(dns.Transfer)
-		tlsCfg := z.Config.TLSConfigQUIC.Clone()
+		// tr can be either IPv4/6 , SCION Address or domain-name or url i.e. squic://ns1.exmple.org:8853
 
-		//tlsCfg.ServerName = "localhost"
-		// Check if we find our primary Server in hosts file
-		if result, err := z.LookupInHosts(tr); err == nil {
-			tlsCfg.ServerName = result
+		t := new(dns.Transfer)
+		var client *dns.Client
+		var netw string = "udp"
+		var tlsCfg *tls.Config
+
+		if _, ok := dns.IsDomainName(tr); ok {
+			// we only have the domain-name of out primary NS
+			// so we need to resolve it first
 		}
-		// otherwise the Client does the lookup in DialContext()
-		client := dns.Client{Net: "squic", TLSConfig: tlsCfg}
+
+		if u, e := url.Parse(tr); e == nil {
+
+			netw = u.Scheme
+			host, p, e := net.SplitHostPort(u.Host)
+			if e != nil {
+				return e
+			}
+
+			// if 'host' has only IPv4/6 addresses, they are resolved by net.Dialer )DialContext
+			// in Client.Dial automatically
+			// only for SCION addresses the host might potentially have we need to do this ourselves
+			scaddrs, err := resolvapi.LookupSCIONAddress(host)
+			if err != nil {
+				// resolution failed, probably because scion capable sdns resolver is not running locally
+				if netw == "squic" {
+					// we wanted to dial primary with SCION, but didnt get its SCION address, how sad
+					return err
+				}
+				goto dialPrimary // fallback to old legacy way of things
+			}
+			if len(scaddrs) == 0 {
+				if netw == "squic" {
+					return errors.New("schema is squic:// but no SCION Address could be resolved for host")
+				}
+				goto dialPrimary
+			}
+			tlsCfg = z.Config.TLSConfigQUIC.Clone()
+			tlsCfg.ServerName = host
+
+			if p != "" {
+				port, eee := strconv.Atoi(p)
+				if eee != nil {
+					return eee
+				}
+
+				tr = util.WithPortIfNotSet(scaddrs[0], port)
+
+			} else {
+				// use the default SCION DoQ Port if none was given
+				tr = util.WithPortIfNotSet(scaddrs[0], 8853)
+
+			}
+
+		}
+
+		if _, er := pan.ParseUDPAddr(tr); er == nil {
+			netw = "squic"
+			tlsCfg = z.Config.TLSConfigQUIC.Clone()
+			//tlsCfg.ServerName = "localhost"
+			// Check if we find our primary Server in hosts file
+			// otherwise the Client does the lookup in DialContext()
+			if result, err := z.LookupInHosts(tr); err == nil {
+				tlsCfg.ServerName = result
+			} else { // (be a good proggy,do not rely on knowledge about dns.Client impl and lookup the servername ourselves)
+				if hostname, err := resolvapi.XLookupStub(tr); err == nil {
+					tlsCfg.ServerName = hostname
+				} else {
+					// there would be no point in dialing the primary,
+					// as without its serverName in the tlsCfg the handshake would fail anyway
+					return err
+				}
+			}
+		}
+
+		if _, er := netaddr.ParseIPPort(tr); er == nil {
+			// tr is an ordenary IPv4/6 address, so nothing to do
+			goto dialPrimary
+		}
+
+	dialPrimary:
+		client = &dns.Client{Net: netw, TLSConfig: tlsCfg}
 		var e error
 		t.Conn, e = client.Dial(tr)
 		if e != nil {
