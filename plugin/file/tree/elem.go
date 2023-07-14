@@ -27,7 +27,17 @@ func (e *Elem) Types() []uint16 {
 }
 
 // Type returns the RRs with type qtype from e.
-func (e *Elem) Type(qtype uint16) []dns.RR { return e.m[qtype] }
+func (e *Elem) Type(qtype uint16) (result []dns.RR) {
+	if qtype == dns.TypeANY {
+		result = append(result, e.m[dns.TypeA]...)
+		result = append(result, e.m[dns.TypeAAAA]...)
+		result = append(result, e.m[dns.TypeTXT]...)
+		// did i forget anything here ?!
+	} else {
+		result = e.m[qtype]
+	}
+	return result
+}
 
 // TypeForWildcard returns the RRs with type qtype from e. The ownername returned is set to qname.
 func (e *Elem) TypeForWildcard(qtype uint16, qname string) []dns.RR {
