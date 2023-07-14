@@ -121,7 +121,7 @@ func parseStanza(c *caddy.Controller) (*Forward, error) {
 	}
 
 	transports := make([]string, len(toHosts))
-	allowedTrans := map[string]bool{"dns": true, "tls": true} // add "squic": true here
+	allowedTrans := map[string]bool{"dns": true, "tls": true, "squic": true}
 	for i, host := range toHosts {
 		trans, h := parse.Transport(host)
 
@@ -148,10 +148,15 @@ func parseStanza(c *caddy.Controller) (*Forward, error) {
 	f.tlsConfig.ClientSessionCache = tls.NewLRUClientSessionCache(len(f.proxies))
 
 	for i := range f.proxies {
+		if transports[i] == transport.SQUIC {
+			f.tlsConfig.NextProtos = []string{"doq", "dq", "doq-i00", "doq-i02"}
+		}
+
 		// Only set this for proxies that need it.
-		if transports[i] == transport.TLS {
+		if transports[i] == transport.TLS || transports[i] == transport.SQUIC {
 			f.proxies[i].SetTLSConfig(f.tlsConfig)
 		}
+
 		f.proxies[i].SetExpire(f.expire)
 		f.proxies[i].GetHealthchecker().SetRecursionDesired(f.opts.HCRecursionDesired)
 		// when TLS is used, checks are set to tcp-tls

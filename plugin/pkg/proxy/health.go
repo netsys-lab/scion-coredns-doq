@@ -48,6 +48,17 @@ func NewHealthChecker(trans string, recursionDesired bool, domain string) Health
 			recursionDesired: recursionDesired,
 			domain:           domain,
 		}
+	case transport.SQUIC:
+		c := new(dns.Client)
+		c.Net = "squic"
+		c.ReadTimeout = 1 * time.Second
+		c.WriteTimeout = 1 * time.Second
+
+		return &dnsHc{
+			c:                c,
+			recursionDesired: recursionDesired,
+			domain:           domain,
+		}
 	}
 
 	log.Warningf("No healthchecker for transport %q", trans)

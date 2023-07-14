@@ -16,6 +16,8 @@ import (
 
 	"github.com/coredns/coredns/request"
 	"github.com/netsec-ethz/scion-apps/pkg/pan"
+	"github.com/quic-go/quic-go"
+	"inet.af/netaddr"
 
 	"github.com/miekg/dns"
 )
@@ -50,9 +52,9 @@ func (t *Transport) updateDialTimeout(newDialTime time.Duration) {
 // Dial dials the address configured in transport, potentially reusing a connection or creating a new one.
 func (t *Transport) Dial(proto string) (*persistConn, bool, error) {
 	// If tls has been configured; use it.
-	if t.tlsConfig != nil {
+	/*if t.tlsConfig != nil {
 		proto = "tcp-tls"
-	}
+	}*/
 
 	t.dial <- proto
 	pc := <-t.ret
@@ -70,6 +72,26 @@ func (t *Transport) Dial(proto string) (*persistConn, bool, error) {
 		t.updateDialTimeout(time.Since(reqTime))
 		return &persistConn{c: conn}, false, err
 	}
+	if proto == "squic" {
+
+		var local netaddr.IPPort
+
+		var hostForSNI string = t.tlsConfig.ServerName
+		var remote pan.UDPAddr
+		remote, er := pan.ParseUDPAddr(t.addr)
+		if er != nil {
+			fmt.Printf("parse of pan.UPDAddr failed with: %v in dns.Client \n", t.addr)
+		}
+		dialCtx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		quEarlySess, err := pan.DialQUICEarly(dialCtx, local, remote, nil, nil, hostForSNI, t.tlsConfig, &quic.Config{MaxIdleTimeout: 5 * time.Minute})
+
+		if err != nil {
+			fmt.Printf("dialQUIC failed in dns.Client: %v \n", err.Error())
+		}
+		return &persistConn{c: &dns.Conn{QuicEarlySession: quEarlySess}}, false, err
+	}
+
 	conn, err := dns.DialTimeout(proto, t.addr, timeout)
 	t.updateDialTimeout(time.Since(reqTime))
 	return &persistConn{c: conn}, false, err
