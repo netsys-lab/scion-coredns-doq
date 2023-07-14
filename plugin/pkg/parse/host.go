@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/coredns/coredns/plugin/pkg/transport"
@@ -43,7 +44,7 @@ func HostPortOrFile(s ...string) ([]string, error) {
 			continue
 		}
 
-		addr, _, err := net.SplitHostPort(host)
+		addr, port, err := net.SplitHostPort(host)
 
 		if err != nil {
 			// Parse didn't work, it is not a addr:port combo
@@ -80,6 +81,8 @@ func HostPortOrFile(s ...string) ([]string, error) {
 				continue
 			}
 			if scaddr, ok := pan.ParseUDPAddr(stripZone(addr)); ok == nil {
+				p, _ := strconv.Atoi(port)
+				scaddr = scaddr.WithPort(uint16(p))
 				servers = append(servers, transport.SQUIC+"://"+scaddr.String())
 				continue
 			}

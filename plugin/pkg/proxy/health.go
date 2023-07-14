@@ -51,6 +51,17 @@ func NewHealthChecker(proxyName, trans string, recursionDesired bool, domain str
 			domain:           domain,
 			proxyName:        proxyName,
 		}
+	case transport.SQUIC:
+		c := new(dns.Client)
+		c.Net = "squic"
+		c.ReadTimeout = 1 * time.Second
+		c.WriteTimeout = 1 * time.Second
+
+		return &dnsHc{
+			c:                c,
+			recursionDesired: recursionDesired,
+			domain:           domain,
+		}
 	}
 
 	log.Warningf("No healthchecker for transport %q", trans)
