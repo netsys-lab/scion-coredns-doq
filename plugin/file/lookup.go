@@ -50,7 +50,8 @@ func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string, 
 		switch qtype {
 		case dns.TypeSOA:
 			return ap.soa(do), ap.ns(do), nil, Success
-		case dns.TypeNS:
+			//		case dns.TypeANY:
+		case dns.TypeNS, dns.TypeANY:
 			nsrrs := ap.ns(do)
 			// How do we now here if the request was received over squic?! is it even important ?!
 			// or should we just send anyone who's asking scion txt glue records ?!
@@ -434,7 +435,7 @@ func (z *Zone) additionalProcessing(answer []dns.RR, do bool) (extra []dns.RR) {
 		}
 
 		sigs := elem.Type(dns.TypeRRSIG)
-		for _, addr := range []uint16{dns.TypeA, dns.TypeAAAA} {
+		for _, addr := range []uint16{dns.TypeA, dns.TypeAAAA, dns.TypeTXT} {
 			if a := elem.Type(addr); a != nil {
 				extra = append(extra, a...)
 				if do {
