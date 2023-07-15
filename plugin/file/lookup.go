@@ -2,7 +2,6 @@ package file
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin/file/rrutil"
@@ -55,11 +54,10 @@ func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string, 
 			nsrrs := ap.ns(do)
 			// How do we now here if the request was received over squic?! is it even important ?!
 			// or should we just send anyone who's asking scion txt glue records ?!
-			glue := tr.Glue(nsrrs, do, false) // technically this isn't glue
+			ipglue := tr.Glue(nsrrs, do, false) // technically this isn't glue
 			sglue := tr.Glue(nsrrs, do, true)
-			if len(sglue) > len(glue) {
-				return nsrrs, nil, sglue, Success
-			}
+
+			glue := append(ipglue, sglue...)
 
 			return nsrrs, nil, glue, Success
 		}
@@ -168,12 +166,10 @@ func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string, 
 				continue
 			}
 
-			glue := tr.Glue(nsrrs, do, false)
+			ipglue := tr.Glue(nsrrs, do, false)
 			sglue := tr.Glue(nsrrs, do, true)
-			if len(sglue) > len(glue) {
-				glue = sglue
-				fmt.Print("almost left scion glue ^^\n")
-			}
+
+			glue := append(ipglue, sglue...)
 
 			if do {
 				dss := typeFromElem(elem, dns.TypeDS, do)
