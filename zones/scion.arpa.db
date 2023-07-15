@@ -1,6 +1,6 @@
 $TTL    604800
 ; $ORIGIN scion.arpa.
-@    IN    SOA    ns.scion.test. lucas\.scharbrodt.ovgu.de (
+@    IN    SOA    ns.scion.arpa. lucas\.scharbrodt.ovgu.de (
                   3        ; Serial
              604800        ; Refresh
               86400        ; Retry
@@ -10,19 +10,15 @@ $TTL    604800
 ; name servers - NS records
 @    IN    NS    ns
 
-19-ffaa-1-1067 IN NS 19-ffaa-1-1067,[127.0.0.1]
-19-ffaa-1-1094 IN NS 19-ffaa-1-1067,[127.0.0.1]
+; name servers - SCION TXT records
+ns    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8856'
+ns7    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8857'
+ns8    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8858'
+ns9    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8859'
 
-1.0.0.127.in-addr.19-ffaa-1-1067 IN PTR primary.ns.scion.test.
-
-1.0.0.127.in-addr.19-ffaa-1-1067 IN PTR secondary.ns.scion.test.
-
-15.2.0.10.in-addr.19-ffaa-1-1067 IN PTR ns2.scion.test.
-
-1.0.0.127.in-addr.19-ffaa-1-1094 IN PTR scnd2.scion.test.
+19-ffaa-1-1067 IN NS ns7
+19-ffaa-1-1094 IN NS ns8
+19-ffaa-1-fe4  IN NS ns9
 
 
 ;"17-ffaa:1:1008,127.0.0.1 ethz.something
-
-
-1.0.0.127.in-addr.19-ffaa-1-fe4 IN PTR rhine.ovgu.scionlab.
