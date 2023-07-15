@@ -1,0 +1,23 @@
+.			86400	IN	SOA	scion-root-servers-net. lucas\.scharbrodt.ovgu.de. 2023061800 1800 900 604800 86400
+
+.			518400	IN	NS	scion-root-servers-net.
+scion-root-servers-net.	518400	IN	TXT '19-ffaa:1:1067,[127.0.0.1]:8853'
+scion-root-servers-net.	518400	IN	A 127.0.0.1 ;:8888
+
+; NS for test. zone
+ns.test. 518400 IN TXT '19-ffaa:1:1067,[127.0.0.1]:8854'
+
+ns.arpa. 518400 IN TXT '19-ffaa:1:1067,[127.0.0.1]:8850'
+
+
+arpa 518400 IN NS ns.arpa.
+test 518400 IN NS ns.test.
+;scion.arpa 518400 IN NS scion-root-servers-net.
+
+;19-ffa-1-1067.scion.arpa 518400 IN NS scion-root-servers-net.
+;19-ffa-1-1094.scion.arpa 518400 IN NS scion-root-servers-net.
+
+
+
+; here we state our own SCION address, to make the scion-sdns resolver come back to us with subsequent queries (only on another port)
+; the format can be anything (with our without 'scion=' prefix, port or enclosing "''")

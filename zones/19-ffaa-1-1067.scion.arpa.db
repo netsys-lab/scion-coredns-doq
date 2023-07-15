@@ -1,0 +1,20 @@
+$TTL    604800
+; $ORIGIN 19-ffaa-1-1067.scion.arpa.
+@    IN    SOA    ns7.19-ffaa-1-1067.scion.arpa. lucas\.scharbrodt.ovgu.de (
+                  3        ; Serial
+             604800        ; Refresh
+              86400        ; Retry
+            2419200        ; Expire
+             604800 )    ; Negative Cache TTL
+;
+; name servers - NS records
+@    IN    NS    ns7
+
+; name servers - SCION TXT records
+ns7    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8857'
+
+1.0.0.127.in-addr IN PTR primary.ns.scion.test.
+
+1.0.0.127.in-addr IN PTR secondary.ns.scion.test.
+
+15.2.0.10.in-addr IN PTR ns2.scion.test.
