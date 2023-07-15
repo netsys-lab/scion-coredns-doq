@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"math/rand"
@@ -148,8 +149,8 @@ Transfer:
 			if result, err := z.LookupInHosts(tr); err == nil {
 				tlsCfg.ServerName = result
 			} else { // (be a good proggy,do not rely on knowledge about dns.Client impl and lookup the servername ourselves)
-				if hostname, err := resolvapi.XLookupStub(tr); err == nil {
-					tlsCfg.ServerName = hostname
+				if hostname, err := resolvapi.LookupUDPAddr(context.TODO(), tr); err == nil {
+					tlsCfg.ServerName = hostname[0]
 				} else {
 					// there would be no point in dialing the primary,
 					// as without its serverName in the tlsCfg the handshake would fail anyway
