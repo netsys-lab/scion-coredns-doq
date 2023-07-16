@@ -164,6 +164,7 @@ replace google.golang.org/grpc v1.54.0 => google.golang.org/grpc v1.40.0
 //replace github.com/miekg/dns v1.1.54 => github.com/loujie1/dns v1.1.51
 //replace github.com/loujie1/dns v1.1.51 => ../luki-loujie-dns
 
-replace github.com/miekg/dns v1.1.54 => ../luki-loujie-dns
+//replace github.com/miekg/dns v1.1.54 => ../luki-loujie-dns
+replace github.com/miekg/dns v1.1.54 => github.com/amdfxlucas/dns v1.6.0
 
 //replace github.com/netsys-lab/sqnet v0.1.0 => ../sqnet
