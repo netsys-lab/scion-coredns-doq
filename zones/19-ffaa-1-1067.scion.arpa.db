@@ -12,6 +12,7 @@ $TTL    604800
 
 ; name servers - SCION TXT records
 ns7    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8857'
+ns7    IN    A   17.18.19.20 ; fake
 
 1.0.0.127.in-addr IN PTR primary.ns.scion.test.
 

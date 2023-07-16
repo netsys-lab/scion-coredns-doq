@@ -14,6 +14,8 @@ $TTL    604800
 
 ; name servers - SCION TXT records
 ns    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8854'
+ns    IN A   12.34.56.78 ; fake
+
 ;ns    IN  A 127.0.0.1:8888
 
 
