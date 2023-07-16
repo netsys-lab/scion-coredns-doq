@@ -12,6 +12,6 @@ $TTL    604800
 
 ; name servers - SCION TXT records
 ns9    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8859'
-
+ns9    IN    A   25.26.27.28 ; fake
 
 1.0.0.127.in-addr IN PTR rhine.ovgu.scionlab.

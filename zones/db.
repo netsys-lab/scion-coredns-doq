@@ -6,8 +6,10 @@ scion-root-servers-net.	518400	IN	A 127.0.0.1 ;:8888
 
 ; NS for test. zone
 ns.test. 518400 IN TXT '19-ffaa:1:1067,[127.0.0.1]:8854'
+ns.test. 519400 IN A   12.34.56.78 ; fake
 
 ns.arpa. 518400 IN TXT '19-ffaa:1:1067,[127.0.0.1]:8850'
+ns.arpa. 518400 IN A    89.10.11.12 ; fake
 
 
 arpa 518400 IN NS ns.arpa.

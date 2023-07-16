@@ -12,9 +12,16 @@ $TTL    604800
 
 ; name servers - SCION TXT records
 ns    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8856'
+ns    IN    A   13.14.15.16 ; fake
+
 ns7    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8857'
+ns7    IN    A   17.18.19.20 ; fake
+
 ns8    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8858'
+ns8    IN    A   21.22.23.24 ; fake
+
 ns9    IN    TXT 'scion=19-ffaa:1:1067,[127.0.0.1]:8859'
+ns9    IN    A   25.26.27.28 ; fake
 
 19-ffaa-1-1067 IN NS ns7
 19-ffaa-1-1094 IN NS ns8
