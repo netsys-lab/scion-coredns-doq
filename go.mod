@@ -35,9 +35,9 @@ require (
 	golang.org/x/sys v0.9.0
 	google.golang.org/api v0.121.0
 	google.golang.org/grpc v1.54.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.50.1
-	inet.af/netaddr v0.0.0-20230525184311-b8eac61e914a // indirect
+	inet.af/netaddr v0.0.0-20230525184311-b8eac61e914a
 	k8s.io/api v0.27.3
 	k8s.io/apimachinery v0.27.3
 	k8s.io/client-go v0.27.3
