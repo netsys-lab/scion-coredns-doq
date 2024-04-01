@@ -27,4 +27,4 @@ jobs:
           done
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@894ff025c7b54547a9a2a1e9f228beae737ad3c2
+        uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8
