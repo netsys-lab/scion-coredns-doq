@@ -66,7 +66,7 @@ Transfer:
 
 			if addressForHost != "" {
 				netw = "squic"
-				tlsCfg = z.Config.TLSConfigQUIC.Clone()
+				tlsCfg = z.Config.TLSConfig.Clone()
 				tlsCfg.ServerName = dns.Fqdn(tr)
 				// use the default SCION DoQ Port if none was given
 				tr = util.WithPortIfNotSet(addressForHost, 8853)
@@ -121,7 +121,7 @@ Transfer:
 				addressForHost = scaddrs[0]
 			}
 
-			tlsCfg = z.Config.TLSConfigQUIC.Clone()
+			tlsCfg = z.Config.TLSConfig.Clone()
 			tlsCfg.ServerName = host
 
 			if p != "" {
@@ -142,7 +142,7 @@ Transfer:
 
 		if _, er := pan.ParseUDPAddr(tr); er == nil {
 			netw = "squic"
-			tlsCfg = z.Config.TLSConfigQUIC.Clone()
+			tlsCfg = z.Config.TLSConfig.Clone()
 			//tlsCfg.ServerName = "localhost"
 			// Check if we find our primary Server in hosts file
 			// otherwise the Client does the lookup in DialContext()
@@ -223,7 +223,7 @@ Transfer:
 		Err = nil
 
 		if dnsutil.IsSCIONAddress(tr) {
-			tlsCfg := z.Config.TLSConfigQUIC.Clone()
+			tlsCfg := z.Config.TLSConfig.Clone()
 
 			// Check if we find our primary Server in hosts file
 			if result, err := z.LookupInHosts(tr); err == nil {

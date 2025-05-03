@@ -85,7 +85,8 @@ func (t *Transport) Dial(proto string) (*persistConn, bool, error) {
 		}
 		dialCtx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		quEarlySess, err := pan.DialQUICEarly(dialCtx, local, remote, nil, nil, hostForSNI, t.tlsConfig, &quic.Config{MaxIdleTimeout: 5 * time.Minute})
+		quEarlySess, err := pan.DialQUICEarly(dialCtx, local.UDPAddr().AddrPort(), remote,
+			hostForSNI, t.tlsConfig, &quic.Config{MaxIdleTimeout: 5 * time.Minute})
 
 		if err != nil {
 			fmt.Printf("dialQUIC failed in dns.Client: %v \n", err.Error())
