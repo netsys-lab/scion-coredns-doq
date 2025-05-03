@@ -4,7 +4,7 @@ go 1.24.0
 
 toolchain go1.24.1
 
-replace github.com/netsec-ethz/scion-apps => /repos/netsys-scion-apps // branch: 'attempt-master-rebased'
+// replace github.com/netsec-ethz/scion-apps => /repos/netsys-scion-apps // branch: 'attempt-master-rebased'
 
 //replace github.com/netsec-ethz/scion-apps v0.5.0 => github.com/amdfxlucas/scion-apps v0.7.0
 
@@ -23,7 +23,6 @@ require (
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.35.4
-	github.com/caddyserver/caddy v1.0.5
 	github.com/coredns/caddy v1.1.1
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/expr-lang/expr v1.17.2
@@ -34,7 +33,7 @@ require (
 	github.com/infobloxopen/go-trees v0.0.0-20221216143356-66ceba885ebc
 	github.com/matttproud/golang_protobuf_extensions v1.0.4
 	github.com/miekg/dns v1.1.55
-	github.com/netsec-ethz/scion-apps v0.6.0
+	github.com/netsec-ethz/scion-apps v0.6.1-0.20250312150559-55667b489898
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin-contrib/zipkin-go-opentracing v0.5.0
 	github.com/openzipkin/zipkin-go v0.4.3
