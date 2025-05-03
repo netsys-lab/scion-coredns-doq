@@ -11,9 +11,9 @@
             "mode": "debug",
             // "program": "${workspaceFolder}/coredns.go"
             "program": "${workspaceFolder}/dnslookup/main.go",
-            "env": 
+            "env":
             {
-                "VERBOSE":"1", 
+                "VERBOSE":"1",
                 "TIMEOUT":"600000"
 
             },
@@ -27,7 +27,8 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/coredns.go"                  
+            "program": "${workspaceFolder}/coredns.go",
+            "args": ["-conf", "/etc/coredns/Corefile"]
         }
     ]
 }
