@@ -12,10 +12,6 @@ type Writer struct {
 	Msg  *dns.Msg
 }
 
-func (r Writer) SupportsMultiMsg() bool {
-	return true
-}
-
 // New makes and returns a new NonWriter.
 func New(w dns.ResponseWriter) *Writer { return &Writer{ResponseWriter: w} }
 
