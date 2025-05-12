@@ -53,6 +53,13 @@ func parse(c *caddy.Controller) (*Sign, error) {
 		origins := plugin.OriginsFromArgsOrServerBlock(c.RemainingArgs(), c.ServerBlockKeys)
 		signers := make([]*Signer, len(origins))
 		for i := range origins {
+			// corner case for '.'root zone to avoid nasty double dot db..signed in filenames
+			var signedzonefile string
+			if origins[i] != "." {
+				signedzonefile = fmt.Sprintf("db.%ssigned", origins[i])
+			} else {
+				signedzonefile = "db.root.signed"
+			}
 			signers[i] = &Signer{
 				dbfile:      dbfile,
 				origin:      origins[i],
@@ -60,7 +67,7 @@ func parse(c *caddy.Controller) (*Sign, error) {
 				jitterExpir: time.Duration(float32(durationExpirationDayJitter) * rand.Float32()),
 				directory:   "/var/lib/coredns",
 				stop:        make(chan struct{}),
-				signedfile:  fmt.Sprintf("db.%ssigned", origins[i]), // origins[i] is a fqdn, so it ends with a dot, hence %ssigned.
+				signedfile:  signedzonefile, // origins[i] is a fqdn, so it ends with a dot, hence %ssigned.
 			}
 		}
 
@@ -95,7 +102,13 @@ func parse(c *caddy.Controller) (*Sign, error) {
 				}
 				for i := range signers {
 					signers[i].directory = dir[0]
-					signers[i].signedfile = fmt.Sprintf("db.%ssigned", signers[i].origin)
+					var signedzonefile string
+					if origins[i] != "." {
+						signedzonefile = fmt.Sprintf("db.%ssigned", signers[i].origin)
+					} else {
+						signedzonefile = "db.root.signed"
+					}
+					signers[i].signedfile = signedzonefile
 				}
 			default:
 				return nil, c.Errf("unknown property '%s'", c.Val())

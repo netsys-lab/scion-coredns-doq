@@ -177,7 +177,8 @@ func signAndLog(s *Signer, why error) {
 	z, err := s.Sign(now)
 	log.Infof("Signing %q because %s", s.origin, why)
 	if err != nil {
-		log.Warningf("Error signing %q with key tags %q in %s: %s, next: %s", s.origin, keyTag(s.keys), time.Since(now), err, now.Add(durationRefreshHours).Format(timeFmt))
+		log.Warningf("Error signing %q with key tags %q in %s: %s, next: %s",
+			s.origin, keyTag(s.keys), time.Since(now), err, now.Add(durationRefreshHours).Format(timeFmt))
 		return
 	}
 
@@ -185,7 +186,10 @@ func signAndLog(s *Signer, why error) {
 		log.Warningf("Error signing %q: failed to move zone file into place: %s", s.origin, err)
 		return
 	}
-	log.Infof("Successfully signed zone %q in %q with key tags %q and %d SOA serial, elapsed %f, next: %s", s.origin, filepath.Join(s.directory, s.signedfile), keyTag(s.keys), z.SOA.Serial, time.Since(now).Seconds(), now.Add(durationRefreshHours).Format(timeFmt))
+	log.Infof("Successfully signed zone %q in %q with key tags %q and %d SOA serial, elapsed %f, next: %s",
+		s.origin, filepath.Join(s.directory, s.signedfile),
+		keyTag(s.keys), z.SOA.Serial, time.Since(now).Seconds(),
+		now.Add(durationRefreshHours).Format(timeFmt))
 }
 
 // refresh checks every val if some zones need to be resigned.
