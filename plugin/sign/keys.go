@@ -7,12 +7,13 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"github.com/google/certificate-transparency-go/x509"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/google/certificate-transparency-go/x509"
 
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
@@ -149,16 +150,60 @@ func rCertParse(c *caddy.Controller) (pair *RCertPair, err error) {
 	return pair, nil
 }
 
+func LoadPrivateKey(key_path string) (crypto.PrivateKey, error) {
+	pemData, err := os.ReadFile(key_path)
+	if err != nil {
+		log.Fatalf("Failed to read PEM file: %v", err)
+	}
+
+	// Decode the PEM data
+	block, _ := pem.Decode(pemData)
+	if block == nil {
+		log.Fatal("Failed to decode PEM data")
+	}
+
+	// Parse the private key
+	privateKey, err := parsePrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatalf("Failed to parse private key: %v", err)
+	}
+	return privateKey, nil
+
+}
+
+func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
+	// Try parsing as PKCS#8 private key
+	if key, err := x509.ParsePKCS8PrivateKey(der); err == nil {
+		return key, nil
+	}
+
+	// Try parsing as PKCS#1 RSA private key
+	if key, err := x509.ParsePKCS1PrivateKey(der); err == nil {
+		return key, nil
+	}
+
+	// Try parsing as EC private key
+	if key, err := x509.ParseECPrivateKey(der); err == nil {
+		return key, nil
+	}
+
+	return nil, fmt.Errorf("failed to parse private key")
+}
+
 func readRCertPair(private, cert string) (*RCertPair, error) {
 	rcert, err := LoadCertificatePEM(cert)
 	if err != nil {
 		return &RCertPair{}, err
 	}
-	privkey, err := LoadPrivateKeyEd25519(private)
+	privkey, err := LoadPrivateKey(private)
 	if err != nil {
 		return &RCertPair{}, err
 	}
-	return &RCertPair{Rcert: rcert, Private: privkey}, nil
+	signer, ok := privkey.(crypto.Signer)
+	if !ok {
+		log.Fatal("Private key does not implement crypto.Signer")
+	}
+	return &RCertPair{Rcert: rcert, Private: signer}, nil
 }
 
 const certprefix = "_rhinecert."

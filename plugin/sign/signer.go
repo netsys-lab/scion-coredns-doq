@@ -53,7 +53,7 @@ func (s *Signer) Sign(now time.Time) (*file.Zone, error) {
 		//z.Insert(pair.Public.ToDS(dns.SHA1).ToCDS())
 		//z.Insert(pair.Public.ToDS(dns.SHA256).ToCDS())
 		//z.Insert(pair.Public.ToCDNSKEY())
-		sig, err := signZSK(pair.Public, s.rCertPair.Private, s.origin, ttl, inception, expiration)
+		sig, err := signZSK(pair.Public, s.rCertPair.Private, s.origin, ttl, inception, expiration, pair.KeyTag)
 		if err != nil {
 			return nil, err
 		}
