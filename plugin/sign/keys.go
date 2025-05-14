@@ -208,9 +208,11 @@ func readRCertPair(private, cert string) (*RCertPair, error) {
 
 const certprefix = "_rhinecert."
 const dsumprefix = "_dsum."
-const txtcertvalueprefix = "rhineCert Ed25519 "
 
 func createCertRR(cert *x509.Certificate, origin string) dns.RR {
+
+	txtcertvalueprefix := fmt.Sprintf("rhineCert %s ", cert.PublicKeyAlgorithm)
+
 	certRR := dns.TXT{}
 	if origin == "." {
 		origin = ""
