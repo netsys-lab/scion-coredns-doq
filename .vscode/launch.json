@@ -5,6 +5,27 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Attach to CoreDNS",
+            "type": "go",
+            "request": "attach",
+            "mode": "local",
+            "processId":    "${command:pickGoProcess}"
+        },
+        {
+            "name": "Launch sdig DNS query",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec",
+            "program": "/go/bin/sdig",
+            // "Usage: %s [options] [@server] [qtype...] [qclass...] [name ...]
+            // "args": ["-port=53", "-sni", "ns1.", "@127.0.0.127", "ANY", "IN", "www.example.com."]
+            "args":  ["-port=853", "-sni", "example.com.", "-squic",
+                         "-rhine", "-rhinecert=/etc/rhine/rhine_cert.pem",
+                         "@1-150,10.150.0.71", "IN", "TXT", "www.example.com" ]
+        // sdig -port=853 -sni example.com. -squic -rhine -rhinecert=/etc/rhine/rhine_cert.pem @1-150,10.150.0.71 IN ANY www.example.com  
+        },
+
+        {
             "name": "Launch dnslookup",
             "type": "go",
             "request": "launch",

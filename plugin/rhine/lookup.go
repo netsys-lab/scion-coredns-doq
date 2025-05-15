@@ -203,9 +203,9 @@ func (z *Zone) Lookup(ctx context.Context, state request.Request, qname string, 
 			sigs = rrutil.SubTypeSignature(sigs, qtype)
 			rrs = append(rrs, sigs...)
 		}
-		if qtype == dns.TypeDNSKEY {
-			additional = z.rhineDelegationProcessing(additional)
-		}
+		//if qtype == dns.TypeDNSKEY {
+		additional = z.rhineDelegationProcessing(additional)
+		//}
 		return rrs, ap.ns(appendRRSIGs), additional, Success
 	}
 
@@ -450,13 +450,13 @@ func (z *Zone) rhineDelegationProcessing(rrs []dns.RR) []dns.RR {
 		RhineSig := rSig.Type(dns.TypeTXT)
 		rrs = append(rrs, RhineSig...)
 	}
-	//if zoneAuth, ok := tr.Search(z.origin); ok {
-	//	rrs = append(rrs, zoneAuth.Type(dns.TypeDNSKEY)...)
-	//
-	//	sigs := zoneAuth.Type(dns.TypeRRSIG)
-	//	sig := rrutil.SubTypeSignature(sigs, dns.TypeDNSKEY)
-	//	rrs = append(rrs, sig...)
-	//}
+	if zoneAuth, ok := tr.Search(z.origin); ok {
+		rrs = append(rrs, zoneAuth.Type(dns.TypeDNSKEY)...)
+
+		sigs := zoneAuth.Type(dns.TypeRRSIG)
+		sig := rrutil.SubTypeSignature(sigs, dns.TypeDNSKEY)
+		rrs = append(rrs, sig...)
+	}
 
 	return rrs
 }

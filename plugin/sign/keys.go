@@ -13,7 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/certificate-transparency-go/x509"
+	// "github.com/google/certificate-transparency-go/x509"
+	"crypto/x509"
 
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
