@@ -1,7 +1,9 @@
 package sign
 
 import (
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
@@ -87,9 +89,33 @@ func signZSK2(dnskey dns.RR, rcert *RCertPair, signerName string, ttl, incep, ex
 		Class:  dns.ClassINET,
 		Ttl:    ttl}
 
-	key.PublicKey = base64.StdEncoding.EncodeToString(rcert.Rcert.PublicKey.(ed25519.PublicKey))
+	var pubkeybytes []byte
+	pubkey := rcert.Rcert.PublicKey
+	switch algocode {
+	case dns.ECDSAP256SHA256:
+		// pubkeybytes = elliptic.Marshal(elliptic.P256(), cert.PublicKey.(*ecdsa.PublicKey).X, cert.PublicKey.(*ecdsa.PublicKey).Y)
+		pcdh, err := pubkey.(*ecdsa.PublicKey).ECDH()
+		if err != nil {
+			return nil, err
+		}
+		pubkeybytes = pcdh.Bytes()
+	case dns.ECDSAP384SHA384:
+		pubkeybytes = elliptic.Marshal(elliptic.P384(), pubkey.(*ecdsa.PublicKey).X, pubkey.(*ecdsa.PublicKey).Y)
+	case dns.ED25519:
+		pubkeybytes = pubkey.(ed25519.PublicKey) //.([]byte)
+	default:
+		// FIXME: this is probably wrong ^^ with ECDSAP384 it produced length 120 bytes, instead of the expected 97
+		_rawkeybytes, err := x509.MarshalPKIXPublicKey(pubkey)
+		if err != nil {
+			return nil, err
+		}
+		pubkeybytes = _rawkeybytes
+	}
+
+	key.PublicKey = base64.StdEncoding.EncodeToString(pubkeybytes)
 
 	rhineprivatekeytag := key.KeyTag()
+	fmt.Printf("[INFO] RHINE public key keytag: %d  keylength: %d\n", rhineprivatekeytag, len(pubkeybytes))
 
 	rrsig := &dns.RRSIG{
 		Hdr:        dns.RR_Header{Rrtype: dns.TypeRRSIG, Ttl: ttl},

@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -158,7 +159,10 @@ func LoadPrivateKey(key_path string) (crypto.PrivateKey, error) {
 	}
 
 	// Decode the PEM data
-	block, _ := pem.Decode(pemData)
+	block, r := pem.Decode(pemData)
+	if len(r) != 0 {
+		return nil, errors.New("invalid file")
+	}
 	if block == nil {
 		log.Fatal("Failed to decode PEM data")
 	}
@@ -253,7 +257,10 @@ func LoadCertificatePEM(path string) (*x509.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
-	block, _ := pem.Decode(bytes)
+	block, r := pem.Decode(bytes)
+	if len(r) != 0 {
+		return nil, errors.New("invalid file")
+	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
